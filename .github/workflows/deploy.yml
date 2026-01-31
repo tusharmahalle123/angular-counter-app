@@ -36,22 +36,22 @@ jobs:
 
       # 4️⃣ Build Angular app
       - name: Build Angular
-        shell: pwsh
+        shell: powershell
         run: npm run build
 
       # 5️⃣ Build Docker image locally
       - name: Build Docker Image
-        shell: pwsh
+        shell: powershell
         run: docker build -t $env:IMAGE_NAME .
 
       # 6️⃣ Apply Kubernetes manifests
       - name: Deploy to Kubernetes
-        shell: pwsh
+        shell: powershell
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
 
       # 7️⃣ Restart deployment to pick up new image
       - name: Restart Deployment
-        shell: pwsh
+        shell: powershell
         run: kubectl rollout restart deployment $env:DEPLOYMENT_NAME -n $env:K8S_NAMESPACE
