@@ -1,55 +1,57 @@
 name: Angular Docker → K8s Deploy
 
-# Run on your self-hosted Windows runner
 on:
   push:
     branches:
       - main
       - development
-  workflow_dispatch:  # allows manual trigger
+  workflow_dispatch:  # manual trigger
 
 jobs:
   build-and-deploy:
     runs-on: self-hosted
 
     env:
+      NODE_OPTIONS: --openssl-legacy-provider
       IMAGE_NAME: counter-app:latest
       K8S_NAMESPACE: dev
       DEPLOYMENT_NAME: angular-counter-app
       SERVICE_NAME: angular-counter-service
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Install Node & Angular dependencies
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
+      # 3️⃣ Install npm dependencies
       - name: Install NPM dependencies
+        shell: pwsh
         run: npm ci
 
-      # 3️⃣ Build Angular app
+      # 4️⃣ Build Angular app
       - name: Build Angular
-        run: |
-          set NODE_OPTIONS=--openssl-legacy-provider
-          npm run build
+        shell: pwsh
+        run: npm run build
 
-      # 4️⃣ Build Docker image locally
+      # 5️⃣ Build Docker image locally
       - name: Build Docker Image
-        run: |
-          docker build -t %IMAGE_NAME% .
+        shell: pwsh
+        run: docker build -t $env:IMAGE_NAME .
 
-      # 5️⃣ Apply Kubernetes manifests
+      # 6️⃣ Apply Kubernetes manifests
       - name: Deploy to Kubernetes
+        shell: pwsh
         run: |
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
 
-      # 6️⃣ Optional: Restart deployment to pick up new image
+      # 7️⃣ Restart deployment to pick up new image
       - name: Restart Deployment
-        run: |
-          kubectl rollout restart deployment %DEPLOYMENT_NAME% -n %K8S_NAMESPACE%
+        shell: pwsh
+        run: kubectl rollout restart deployment $env:DEPLOYMENT_NAME -n $env:K8S_NAMESPACE
