@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: angular-counter-app
+  namespace: dev
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: angular-counter-app
+  template:
+    metadata:
+      labels:
+        app: angular-counter-app
+    spec:
+      containers:
+      - name: angular-counter-app
+        image: counter-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80

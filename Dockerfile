@@ -1,45 +1,40 @@
-# Stage 1: Build the Angular app using Node.js
-FROM node:18-alpine as build
+# ---------- Stage 1: Build Angular ----------
+FROM node:18-alpine AS build
 
-# Create a non-root user #RUN useradd -m node
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-USER appuser
-
-# Set environment variable for OpenSSL legacy provider
 ENV NODE_OPTIONS=--openssl-legacy-provider
-
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json first to leverage caching
-COPY package.json* ./
-
-# Install project dependencies
+# Install dependencies
+COPY package.json package-lock.json ./
 RUN npm install
 
-# Copy the rest of the application files
+# Copy source and build
 COPY . .
-
-# Build the Angular app
 RUN npm run build
 
-# Stage 2: Serve the Angular app with Nginx
+# ---------- Stage 2: Nginx Runtime ----------
 FROM nginx:alpine
 
-# Set correct ownership and permissions for the nginx user to read the files
-RUN chown -R nginx:nginx /usr/share/nginx/html
-RUN chmod -R 755 /usr/share/nginx/html
+# Create runtime directories
+RUN mkdir -p /var/cache/nginx /run \
+ && chown -R nginx:nginx /var/cache/nginx /run /usr/share/nginx \
+ && chmod -R 755 /var/cache/nginx /run /usr/share/nginx
 
-# Set the user to nginx
+# Remove default html
+RUN rm -rf /usr/share/nginx/html/*
+
+# ⚠️ Copy Angular build CONTENTS to root (not folder)
+COPY --from=build /usr/src/app/dist/counter-app/. /usr/share/nginx/html/
+
+# Fix permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html \
+ && chmod -R 755 /usr/share/nginx/html
+
+# Switch to non-root user
 USER nginx
 
-RUN rm /usr/share/nginx/html/*
-
-# Copy the built app from the previous stage to Nginx
-COPY --from=build /usr/src/app/dist/ /usr/share/nginx/html
-
-# Expose port 80
+# Expose HTTP port
 EXPOSE 80
 
-# Run Nginx in the foreground
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]

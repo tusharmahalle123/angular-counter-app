@@ -1,0 +1,55 @@
+name: Angular Docker → K8s Deploy
+
+# Run on your self-hosted Windows runner
+on:
+  push:
+    branches:
+      - main
+      - development
+  workflow_dispatch:  # allows manual trigger
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    env:
+      IMAGE_NAME: counter-app:latest
+      K8S_NAMESPACE: dev
+      DEPLOYMENT_NAME: angular-counter-app
+      SERVICE_NAME: angular-counter-service
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Install Node & Angular dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      # 3️⃣ Build Angular app
+      - name: Build Angular
+        run: |
+          set NODE_OPTIONS=--openssl-legacy-provider
+          npm run build
+
+      # 4️⃣ Build Docker image locally
+      - name: Build Docker Image
+        run: |
+          docker build -t %IMAGE_NAME% .
+
+      # 5️⃣ Apply Kubernetes manifests
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      # 6️⃣ Optional: Restart deployment to pick up new image
+      - name: Restart Deployment
+        run: |
+          kubectl rollout restart deployment %DEPLOYMENT_NAME% -n %K8S_NAMESPACE%
