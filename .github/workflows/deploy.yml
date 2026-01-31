@@ -48,8 +48,8 @@ jobs:
       - name: Deploy to Kubernetes
         shell: powershell
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8/deployment.yaml
+          kubectl apply -f k8/service.yaml
 
       # 7️⃣ Restart deployment to pick up new image
       - name: Restart Deployment
