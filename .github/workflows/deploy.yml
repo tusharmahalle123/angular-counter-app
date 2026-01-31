@@ -31,7 +31,7 @@ jobs:
 
       # 3️⃣ Install npm dependencies
       - name: Install NPM dependencies
-        shell: pwsh
+        shell: powershell
         run: npm ci
 
       # 4️⃣ Build Angular app
